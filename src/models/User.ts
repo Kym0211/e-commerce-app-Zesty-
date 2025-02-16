@@ -45,9 +45,9 @@ const OrderSchema = new Schema<Order>({
 
 // User Interface & Schema
 export interface User extends Document {
-    email: string;
     password: string;
-    phoneNo: string;
+    email: string;
+    name: string;
     addresses: Address[];
     cart: Cart[];
     orders: Order[];
@@ -55,9 +55,9 @@ export interface User extends Document {
 }
 
 const UserSchema = new Schema<User>({
-    email: { type: String, unique: true, sparse: true},
     password: { type: String, required: true },
-    phoneNo: { type: String },
+    email: { type: String},
+    name: { type: String, required: true },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     addresses: [AddressSchema],
     cart: [CartSchema],

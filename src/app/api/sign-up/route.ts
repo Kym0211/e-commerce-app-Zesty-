@@ -1,31 +1,47 @@
 import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/models/User";
 import bcrypt from "bcryptjs";
+import { sendOTP } from "@/helpers/OTP";
 
 export async function POST(req: Request){
     await dbConnect()
 
     try {
-        const {phoneNo, password} = await req.json()
-        const existingUserByPhoneNo = await UserModel.findOne({
-            phoneNo,
-        })
+        const {name, email, password} = await req.json()
+        const existingUserByEmail = await UserModel.findOne({email})
 
-        if(existingUserByPhoneNo) {
+        if(existingUserByEmail) {
             return Response.json({
                 success: false,
-                message: "User already exist with this number"
+                message: "User already exist with this email"
             }, {status:400})
+        }else {
+            const hashedPassword = await bcrypt.hash(password,10)
+            const expiryDate = new Date()
+            expiryDate.setHours(expiryDate.getHours() + 1)
+
+            const newUser = new UserModel({
+                name,
+                email,
+                password: hashedPassword,
+            })
+
+            await newUser.save();
         }
+        const otp = Math.floor(100000 + Math.random()*900000).toString()
 
-        const hashedPassword = await bcrypt.hash(password,10);
-        const newUser = new UserModel({
-            phoneNo: phoneNo,
-            password: hashedPassword,
-        })
+        const emailResponse = await sendOTP(
+            email,
+            name,
+            otp
+        )
 
-        console.log(newUser)
-        await newUser.save();
+        if(!emailResponse.success){
+            return Response.json({
+                success: false,
+                message: emailResponse.message
+            },{status:500})
+        }
 
         return Response.json({
             success: true,

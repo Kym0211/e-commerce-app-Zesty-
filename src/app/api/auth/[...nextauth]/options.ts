@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/models/User";
+import axios from "axios";
 
 export const authOptions: NextAuthOptions = ({
   // Configure one or more authentication providers
@@ -11,22 +12,25 @@ export const authOptions: NextAuthOptions = ({
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+            prompt: "consent",
+            access_type: "offline",
+            response_type: "code"
+        }
+      }
     }),
     CredentialsProvider({
         id: "credentials",
         name: "Credentials",
         credentials: {
-            identifier: { label: "phoneNo", type: "text" },
+            identifier: { label: "email", type: "text" },
             password: { label: "password", type: "password" }
         },
         async authorize(credentials: any): Promise<any> {
             await dbConnect()
             try {
-                const user = await UserModel.findOne({
-                    $or: [
-                        { phoneNo: credentials.identifier },
-                    ]
-                })
+                const user = await UserModel.findOne({ email: credentials.identifier })
 
                 if (!user) {
                     throw new Error("Please verify your account before login")
@@ -61,9 +65,24 @@ export const authOptions: NextAuthOptions = ({
             session.user._id = token._id;
         }
         return session;
-    }
-  },
-
+    },
+    async signIn({ user, account }) {
+        if (account?.provider === "google") {
+          try {
+            await axios.post(`${process.env.NEXTAUTH_URL}/api/sign-up`, {
+              name: user.name,
+              email: user.email,
+              password: ""
+            });
+            // console.log(user);
+          } catch (error) {
+            console.error("Error saving Google user:", error);
+            return false; // Reject login if saving fails
+          }
+        }
+        return true;
+      },
+    },
   pages: {
     signIn: "/signin",
   },
