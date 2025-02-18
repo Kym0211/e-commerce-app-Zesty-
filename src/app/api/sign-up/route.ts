@@ -2,6 +2,8 @@ import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/models/User";
 import bcrypt from "bcryptjs";
 import { sendOTP } from "@/helpers/OTP";
+import redis from "@/lib/redis";
+
 
 export async function POST(req: Request){
     await dbConnect()
@@ -15,8 +17,8 @@ export async function POST(req: Request){
                 success: false,
                 message: "User already exist with this email"
             }, {status:400})
-        }else {
-            const hashedPassword = await bcrypt.hash(password,10)
+        } else {
+            const hashedPassword = bcrypt.hashSync(password, 10)
             const expiryDate = new Date()
             expiryDate.setHours(expiryDate.getHours() + 1)
 
@@ -35,6 +37,14 @@ export async function POST(req: Request){
             name,
             otp
         )
+        const redisDb = redis.setex(email, 60, otp)
+        console.log("OTP for email", email, "is", otp)
+        if(redisDb instanceof Error){
+            return Response.json({
+                success: false,
+                message: "Error saving OTP"
+            },{status:500})
+        }
 
         if(!emailResponse.success){
             return Response.json({

@@ -48,6 +48,8 @@ export interface User extends Document {
     password: string;
     email: string;
     name: string;
+    isVerified: boolean;
+    isGoogleAuth: boolean;
     addresses: Address[];
     cart: Cart[];
     orders: Order[];
@@ -58,6 +60,8 @@ const UserSchema = new Schema<User>({
     password: { type: String, required: true },
     email: { type: String},
     name: { type: String, required: true },
+    isVerified: { type: Boolean, default: false },
+    isGoogleAuth: { type: Boolean, default: false },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     addresses: [AddressSchema],
     cart: [CartSchema],

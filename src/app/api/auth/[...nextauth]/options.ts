@@ -4,7 +4,6 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/models/User";
-import axios from "axios";
 
 export const authOptions: NextAuthOptions = ({
   // Configure one or more authentication providers
@@ -29,6 +28,7 @@ export const authOptions: NextAuthOptions = ({
         },
         async authorize(credentials: any): Promise<any> {
             await dbConnect()
+            console.log("Credentials", credentials)
             try {
                 const user = await UserModel.findOne({ email: credentials.identifier })
 
@@ -67,21 +67,32 @@ export const authOptions: NextAuthOptions = ({
         return session;
     },
     async signIn({ user, account }) {
-        if (account?.provider === "google") {
-          try {
-            await axios.post(`${process.env.NEXTAUTH_URL}/api/sign-up`, {
-              name: user.name,
-              email: user.email,
-              password: ""
-            });
-            // console.log(user);
-          } catch (error) {
-            console.error("Error saving Google user:", error);
-            return false; // Reject login if saving fails
-          }
+      await dbConnect();
+      if (account?.provider === "google") {
+        try {
+          // Use upsert to create or update the user in one step
+          const existingUser = await UserModel.findOneAndUpdate(
+            { email: user.email },
+            {
+              $set: { 
+                name: user.name, 
+                isGoogleAuth: true, 
+                isVerified: true 
+              }
+            },
+            { new: true, upsert: true } // Return updated document and create if it doesn’t exist
+          );
+    
+          console.log("Google user processed:", existingUser);
+          return true;
+        } catch (error) {
+          console.log("Error saving Google user:", error);
+          return false;
         }
-        return true;
-      },
+      }
+      return true;
+    }
+    
     },
   pages: {
     signIn: "/signin",
