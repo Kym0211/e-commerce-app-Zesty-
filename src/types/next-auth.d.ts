@@ -7,13 +7,16 @@ declare module 'next-auth' {
         _id?: string;
         isVerified?: boolean;
         name?: string;
-        addresses: Address[];
-        cart: Cart[];
-        orders: Order[];
+        addresses?: Address[];
+        cart?: Cart[];
+        orders?: Order[];
     }
     interface Session {
         user: {
             _id?: string;
+            name?: string;
+            addresses?: Address[];
+            cart?: Cart[];
         } & DefaultSession['user']
     }
 }
@@ -21,5 +24,8 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
     interface JWT {
         _id?: string;
+        name?: string;
+        addresses?: Address[];
+        cart?: Cart[];
     }
 }

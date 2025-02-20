@@ -8,6 +8,7 @@ export interface Address {
     city: string;
     state: string;
     zip: number;
+    isDefault: boolean;
 }
 
 const AddressSchema = new Schema<Address>({
@@ -17,6 +18,7 @@ const AddressSchema = new Schema<Address>({
     city: { type: String, required: true },
     state: { type: String, required: true },
     zip: { type: Number, required: true },
+    isDefault: { type: Boolean, default: false },
 });
 
 // Cart Interface & Schema

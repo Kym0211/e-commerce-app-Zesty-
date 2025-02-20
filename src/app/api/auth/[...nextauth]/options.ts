@@ -49,23 +49,35 @@ export const authOptions: NextAuthOptions = ({
         }
     })
   ],
-  session: {
-    strategy: "jwt",
-  },
   callbacks: {
-
-    async jwt({ token, user }: { token: any, user: any }) {
-        if(user) {
-            token._id = user._id?.toString();
+    async jwt({ token, user, account }) {
+      if (account?.provider === "google") {
+        const dbUser = await UserModel.findOne({ email: token.email }) as { _id: string, name: string, addresses: any[], cart: any[] };
+        if (dbUser) {
+          token._id = dbUser._id.toString();
+          token.name = dbUser.name;
+          token.addresses = dbUser.addresses;
+          token.cart = dbUser.cart;
         }
-        return token
+      } else if (user) {
+        token._id = user._id?.toString();
+        token.name = user.name;
+        token.addresses = user.addresses;
+        token.cart = user.cart;
+      }
+      return token;
     },
     async session({ session, token }: { session: any, token: any }) {
-        if(token) {
-            session.user._id = token._id;
-        }
-        return session;
-    },
+      if(token) {
+          session.user = {
+              _id: token._id,
+              name: token.name,
+              addresses: token.addresses,
+              cart: token.cart
+          };
+      }
+      return session;
+  },
     async signIn({ user, account }) {
       await dbConnect();
       if (account?.provider === "google") {
@@ -82,9 +94,9 @@ export const authOptions: NextAuthOptions = ({
             },
             { new: true, upsert: true } // Return updated document and create if it doesn’t exist
           );
-    
-          console.log("Google user processed:", existingUser);
+
           return true;
+
         } catch (error) {
           console.log("Error saving Google user:", error);
           return false;
@@ -96,6 +108,9 @@ export const authOptions: NextAuthOptions = ({
     },
   pages: {
     signIn: "/signin",
+  },
+  session: {
+    strategy: "jwt",
   },
 
   secret: process.env.NEXTAUTH_SECRET,
