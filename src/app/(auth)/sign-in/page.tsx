@@ -8,16 +8,18 @@ import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { signInSchema } from "@/schemas/singInSchema";
-import axios, { AxiosError } from "axios";
-import { ApiResponse } from "@/types/ApiResponse";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { signIn } from "next-auth/react"; // ✅ Import signIn
+import { Checkbox } from "@/components/ui/checkbox";
+import { signIn } from "next-auth/react";
+import { motion } from "framer-motion";
+import { Logo } from "@/components/logo";
 
 const Page = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -30,22 +32,32 @@ const Page = () => {
   });
 
   const onSubmit = async (data: z.infer<typeof signInSchema>) => {
-    console.log("Form data", data);
     setIsSubmitting(true);
     try {
-      const response = await signIn('credentials', {
+      const response = await signIn("credentials", {
         redirect: false,
         identifier: data.email,
-        password: data.password
-    })
-      console.log("Response", response);
-      // router.push("/dashboard"); // Redirect to dashboard or another page
+        password: data.password,
+        rememberMe,
+      });
+
+      if (response?.ok) {
+        toast({
+          title: "Welcome Back",
+          description: "You've been successfully signed in",
+        });
+        router.push("/dashboard");
+      } else {
+        toast({
+          title: "Sign-In Failed",
+          description: response?.error || "Invalid credentials",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
-      console.error("Error in signup of user", error);
-      const axiosError = error as AxiosError<ApiResponse>;
       toast({
-        title: "Signup failed",
-        description: axiosError.response?.data.message || "An error occurred",
+        title: "Sign-In Failed",
+        description: "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -53,91 +65,140 @@ const Page = () => {
     }
   };
 
-  // ✅ Google Sign-Up Function
-  const handleGoogleSignUp = async () => {
+  const handleGoogleSignIn = async () => {
     try {
-      const response = await signIn("google", { callbackUrl: "/" }); // Redirect after Google signup
-      console.log("Google Sign-Up Response", response);
+      await signIn("google", { callbackUrl: "/dashboard" });
     } catch (error) {
       toast({
-        title: "Google Sign-Up Failed",
-        description: "An error occurred while signing up with Google.",
+        title: "Google Sign-In Failed",
+        description: "An error occurred during Google sign-in",
         variant: "destructive",
       });
     }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
-        <div className="text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-6">
-            Join Mystery Message
-          </h1>
-          <p className="mb-4">Sign up to start your anonymous adventure</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-[#0F172A] to-[#1E293B] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md bg-slate-800/50 backdrop-blur-lg rounded-2xl p-8 border border-white/10 shadow-2xl hover:shadow-cyan-500/10 transition-all"
+      >
+        {/* Logo */}
+        <div className="w-80 mb-2 flex items-center justify-center">
+          <Logo />
         </div>
 
-        <Button variant="outline" className="w-full flex items-center justify-center gap-2" onClick={handleGoogleSignUp}>
-        <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="200" height="200" viewBox="0 0 48 48">
-        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
-        </svg>
-          Sign In with Google
-        </Button>
+        {/* Google Sign-In Button */}
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Button
+            onClick={handleGoogleSignIn}
+            className="w-full bg-gradient-to-r from-slate-700/50 to-slate-800/50 hover:from-slate-600/50 hover:to-slate-700/50 border border-cyan-400/20 text-cyan-200 rounded-xl h-12 font-semibold space-x-2 transition-all"
+          >
+            <svg viewBox="0 0 48 48" className="h-5 w-5">
+              <path fill="#fff" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#EA4335" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#4285F4" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              <path fill="#FBBC05" d="M24 9.5c3.48 0 6.54 1.2 8.97 3.35l6.74-6.74C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98
+              6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                            <path fill="#FBBC05" d="M24 9.5c3.48 0 6.54 1.2 8.97 3.35l6.74-6.74C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            </svg>
+            <span>Continue with Google</span>
+          </Button>
+        </motion.div>
 
-        <div className="flex items-center justify-center space-x-2">
-          <span className="w-1/3 h-px bg-gray-300"></span>
-          <span className="text-gray-500 text-sm">or</span>
-          <span className="w-1/3 h-px bg-gray-300"></span>
+        <div className="my-8 flex items-center">
+          <div className="flex-grow border-t border-cyan-400/20"></div>
+          <span className="mx-4 text-cyan-300/80 text-sm">or sign in with email</span>
+          <div className="flex-grow border-t border-cyan-400/20"></div>
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               name="email"
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="text-cyan-200/90">Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="Email" {...field} />
+                    <Input
+                      {...field}
+                      className="bg-slate-800/50 border border-cyan-400/20 focus:border-cyan-400/40 rounded-xl h-12 text-cyan-100 focus-visible:ring-0"
+                      placeholder="alex@example.com"
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-red-400/90" />
                 </FormItem>
               )}
             />
+
             <FormField
               name="password"
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel className="text-cyan-200/90">Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Password" {...field} />
+                    <Input
+                      type="password"
+                      {...field}
+                      className="bg-slate-800/50 border border-cyan-400/20 focus:border-cyan-400/40 rounded-xl h-12 text-cyan-100 focus-visible:ring-0"
+                      placeholder="••••••••"
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-red-400/90" />
                 </FormItem>
               )}
             />
-            <Button type="submit" aria-disabled={isSubmitting} className="w-full">
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait...
-                </>
-              ) : (
-                "Sign In"
-              )}
-            </Button>
-          </form>
-          <div className="text-center mt-4">
-            <p>
-              Don't have an account?{" "}
-              <Link href="/sign-up" className="text-blue-600 hover:text-blue-800">
-                SignUp
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onCheckedChange={() => setRememberMe(!rememberMe)}
+                  className="border-cyan-400/40 data-[state=checked]:bg-cyan-500"
+                />
+                <label htmlFor="rememberMe" className="text-sm text-cyan-300/80">
+                  Remember me
+                </label>
+              </div>
+              <Link
+                href="/forgot-password"
+                className="text-sm text-cyan-400 hover:text-cyan-300 underline-offset-4 hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white rounded-xl h-12 font-semibold text-lg transition-all"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-cyan-100" />
+                ) : (
+                  "Sign In"
+                )}
+              </Button>
+            </motion.div>
+
+            <p className="text-center text-sm text-cyan-300/80 mt-6">
+              New to Zesty?{" "}
+              <Link
+                href="/sign-up"
+                className="text-cyan-400 hover:text-cyan-300 font-semibold underline-offset-4 hover:underline transition-colors"
+              >
+                Create account
               </Link>
             </p>
-          </div>
+          </form>
         </Form>
-      </div>
+      </motion.div>
     </div>
   );
 };

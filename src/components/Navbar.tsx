@@ -7,12 +7,14 @@ import { useSession, signOut } from "next-auth/react";
 import { Search, ShoppingCart, ChevronDown, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { motion } from "framer-motion";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Logo } from "@/components/logo";
 
 const Navbar = () => {
     const router = useRouter();
@@ -29,91 +31,130 @@ const Navbar = () => {
     };
 
     return (
-        <nav className="bg-white shadow-sm" style={{ fontFamily: "'Open Sans', sans-serif" }}>
-            <div className="container mx-auto px-4 py-2 flex items-center justify-between">
+        <nav className="bg-gradient-to-r from-slate-900/90 to-[#0F172A]/90 backdrop-blur-lg border-b border-cyan-400/20">
+            <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
                 {/* Logo */}
-                <Link href="/" className="text-2xl font-bold text-[#1E3A8A] flex-shrink-0 mr-2" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                    Zesty
+                <Link href="/" className="w-28">
+                    <Logo />
                 </Link>
 
                 {/* Address */}
-                <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600 flex-shrink-0 mr-2">
-                    <MapPin className="h-4 w-4 text-[#1E3A8A]" />
-                    <span className="truncate max-w-[150px]">
-                        {address ? address.label : "Select address"}
+                <div className="hidden md:flex items-center gap-2 text-sm text-cyan-300/90 flex-shrink-0">
+                    <MapPin className="h-4 w-4 text-cyan-400" />
+                    <span className="truncate max-w-[150px] font-medium">
+                        {address ? address.label : "Select delivery address"}
                     </span>
                 </div>
 
                 {/* Search Bar */}
-                <div className="flex items-center space-x-2 flex-grow justify-end">
-                    <div className="flex-grow max-w-xl">
-                        <div className="flex">
-                            {/* Category Dropdown */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="rounded-r-none px-2 sm:px-4 bg-[#F3F4F6] text-[#1E3A8A] border-[#1E3A8A]">
-                                        <span className="hidden sm:inline">{category}</span>
-                                        <ChevronDown className="h-4 w-4 sm:ml-2" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                    <DropdownMenuItem onSelect={() => setCategory("Electronics")}>
-                                        Electronics
+                <div className="flex-grow max-w-2xl">
+                    <div className="flex gap-1.5 w-full">
+                        {/* Category Dropdown */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button 
+                                    variant="outline" 
+                                    className="rounded-xl bg-slate-800/50 border-cyan-400/20 text-cyan-300 hover:bg-slate-700/50 hover:text-cyan-200 px-4"
+                                >
+                                    <span>{category}</span>
+                                    <ChevronDown className="h-4 w-4 ml-2" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="bg-slate-800/80 border-cyan-400/20 backdrop-blur-lg">
+                                {['Electronics', 'Clothing', 'Books'].map((item) => (
+                                    <DropdownMenuItem 
+                                        key={item}
+                                        className="text-cyan-200 focus:bg-slate-700/50"
+                                        onSelect={() => setCategory(item)}
+                                    >
+                                        {item}
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => setCategory("Clothing")}>
-                                        Clothing
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => setCategory("Books")}>
-                                        Books
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
 
-                            {/* Search Input */}
-                            <Input
-                                type="search"
-                                placeholder={`Search ${category}...`}
-                                className="w-full rounded-l-none rounded-r-none border-x-0 focus:ring-[#1E3A8A]"
-                            />
-                            <Button type="submit" className="rounded-l-none px-2 sm:px-4 bg-[#1E3A8A] text-white hover:bg-[#2A4A9A]">
-                                <Search className="h-4 w-4" />
-                            </Button>
-                        </div>
+                        {/* Search Input */}
+                        <Input
+                            type="search"
+                            placeholder={`Search ${category.toLowerCase()}...`}
+                            className="bg-slate-800/50 border-cyan-400/20 text-cyan-100 placeholder-cyan-400/50 focus:border-cyan-400/40 rounded-xl"
+                        />
+                        <Button 
+                            size="icon" 
+                            className="bg-cyan-600/80 hover:bg-cyan-500/90 rounded-xl border border-cyan-400/30"
+                        >
+                            <Search className="h-4 w-4 text-cyan-100" />
+                        </Button>
                     </div>
+                </div>
 
+                {/* Navigation Links */}
+                <div className="flex items-center gap-4">
                     {/* User Dropdown */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="text-sm px-2 sm:px-4 text-[#1E3A8A]">
-                                <div className="flex flex-col items-start">
-                                    <span className="text-xs">Hello</span>
-                                    <span className="font-semibold truncate max-w-[100px]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                            <Button 
+                                variant="ghost" 
+                                className="text-cyan-300 hover:bg-slate-800/50 hover:text-cyan-200 gap-2"
+                            >
+                                <div className="text-left">
+                                    <p className="text-xs font-light text-cyan-400/80">Welcome</p>
+                                    <p className="font-medium truncate max-w-[120px] bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
                                         {user ? user.name : "Sign in"}
-                                    </span>
+                                    </p>
                                 </div>
-                                <ChevronDown className="h-4 w-4 ml-2" />
+                                <ChevronDown className="h-4 w-4 text-cyan-400/80" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuItem onSelect={() => router.push('/profile')}>Profile</DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => router.push('/settings')}>Settings</DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => router.push('/cart')} className="sm:hidden">Cart</DropdownMenuItem>
-                            <DropdownMenuItem onSelect={handleSignOut}>Sign out</DropdownMenuItem>
+                        <DropdownMenuContent className="bg-slate-800/80 border-cyan-400/20 backdrop-blur-lg min-w-[180px]">
+                            <DropdownMenuItem 
+                                className="text-cyan-200 hover:bg-slate-700/50"
+                                onSelect={() => router.push('/profile')}
+                            >
+                                Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                                className="text-cyan-200 hover:bg-slate-700/50"
+                                onSelect={() => router.push('/settings')}
+                            >
+                                Settings
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                                className="text-cyan-200 hover:bg-slate-700/50 sm:hidden"
+                                onSelect={() => router.push('/cart')}
+                            >
+                                Cart
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                                className="text-red-400 hover:bg-slate-700/50"
+                                onSelect={handleSignOut}
+                            >
+                                Sign Out
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
 
                     {/* Orders Link */}
-                    <Link href="/orders" className="text-sm hover:text-[#FF6B6B] hidden sm:inline-block">
-                        Returns & Orders
+                    <Link 
+                        href="/orders" 
+                        className="text-sm text-cyan-300/90 hover:text-cyan-200 hidden sm:block"
+                    >
+                        Orders & Returns
                     </Link>
 
                     {/* Cart Icon */}
-                    <Link href="/cart" className="relative p-2 hidden sm:inline-flex">
-                        <ShoppingCart className="h-6 w-6 text-[#1E3A8A]" />
-                        <span className="absolute -top-1 -right-1 bg-[#FF6B6B] text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Link 
+                        href="/cart" 
+                        className=" ml-3 relative p-2 hover:bg-slate-800/50 rounded-xl transition-colors me-2" // Added margin-right
+                        >
+                        <ShoppingCart className="h-6 w-6 text-cyan-300" />
+                        <span className="absolute top-2 right-0 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
                             {totalItems}
                         </span>
                     </Link>
+
+                    </motion.div>
                 </div>
             </div>
         </nav>

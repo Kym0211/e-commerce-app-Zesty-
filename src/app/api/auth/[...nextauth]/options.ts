@@ -13,44 +13,45 @@ export const authOptions: NextAuthOptions = ({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {
         params: {
-            prompt: "consent",
-            access_type: "offline",
-            response_type: "code"
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
         }
       }
     }),
     CredentialsProvider({
-        id: "credentials",
-        name: "Credentials",
-        credentials: {
-            identifier: { label: "email", type: "text" },
-            password: { label: "password", type: "password" }
-        },
-        async authorize(credentials: any): Promise<any> {
-            await dbConnect()
-            console.log("Credentials", credentials)
-            try {
-                const user = await UserModel.findOne({ email: credentials.identifier })
+      id: "credentials",
+      name: "Credentials",
+      credentials: {
+        identifier: { label: "email", type: "text" },
+        password: { label: "password", type: "password" }
+      },
+      async authorize(credentials: any): Promise<any> {
+        await dbConnect();
+        try {
+          const user = await UserModel.findOne({ email: credentials.identifier });
 
-                if (!user) {
-                    throw new Error("Please verify your account before login")
-                }
+          if (!user) {
+            throw new Error("Please verify your account before login");
+          }
 
-                const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password)
+          const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
 
-                if (!isPasswordCorrect) {
-                    throw new Error("Incorrect password")
-                }
+          if (!isPasswordCorrect) {
+            throw new Error("Incorrect password");
+          }
 
-                return user
-            } catch (error: any) {
-                throw new Error(error.message)
-            }
+          return user;
+        } catch (error: any) {
+          throw new Error(error.message);
         }
+      }
     })
   ],
   callbacks: {
+    // JWT Callback
     async jwt({ token, user, account }) {
+      await dbConnect();
       if (account?.provider === "google") {
         const dbUser = await UserModel.findOne({ email: token.email }) as { _id: string, name: string, addresses: any[], cart: any[] };
         if (dbUser) {
@@ -60,24 +61,38 @@ export const authOptions: NextAuthOptions = ({
           token.cart = dbUser.cart;
         }
       } else if (user) {
+        // Handle credentials sign-in
         token._id = user._id?.toString();
         token.name = user.name;
         token.addresses = user.addresses;
         token.cart = user.cart;
       }
+
+      // Add rememberMe flag to the token
+      if (account?.rememberMe) {
+        token.rememberMe = true; // Set rememberMe flag
+      }
+
       return token;
     },
-    async session({ session, token }: { session: any, token: any }) {
-      if(token) {
-          session.user = {
-              _id: token._id,
-              name: token.name,
-              addresses: token.addresses,
-              cart: token.cart
-          };
+
+    // Session Callback
+    async session({ session, token }: { session: any; token: any }) {
+      if (token) {
+        session.user = {
+          _id: token._id,
+          name: token.name,
+          addresses: token.addresses,
+          cart: token.cart
+        };
+
+        // Adjust session maxAge dynamically based on rememberMe flag
+        session.maxAge = token.rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60; // 30 days vs 1 day
       }
       return session;
-  },
+    },
+
+    // Sign-In Callback
     async signIn({ user, account }) {
       await dbConnect();
       if (account?.provider === "google") {
@@ -104,14 +119,13 @@ export const authOptions: NextAuthOptions = ({
       }
       return true;
     }
-    
-    },
+  },
   pages: {
     signIn: "/signin",
   },
   session: {
     strategy: "jwt",
+    maxAge: 24 * 60 * 60, // Default to 24 hours
   },
-
   secret: process.env.NEXTAUTH_SECRET,
 });
